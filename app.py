@@ -20,12 +20,22 @@ worksheet = sheet.worksheet("Content")
 data = worksheet.get_all_records()
 df = pd.DataFrame(data)
 
-# Sidebar Navigation
+# Sidebar Navigation with Buttons
 st.sidebar.title("Navigation")
-page_choice = st.sidebar.radio("Select Page", ["Content", "Students"])
+content_button = st.sidebar.button("Content")
+students_button = st.sidebar.button("Students")
 
-# Display Content or Students page based on selection
-if page_choice == "Content":
+# Set the current page based on button clicks
+if 'page' not in st.session_state:
+    st.session_state.page = "Content"  # Default page
+
+if content_button:
+    st.session_state.page = "Content"
+elif students_button:
+    st.session_state.page = "Students"
+
+# Display Content or Students page based on current page selection
+if st.session_state.page == "Content":
     # Display course content
     st.title("Course Content")
 
@@ -35,7 +45,6 @@ if page_choice == "Content":
             weekly_data = df[df['Week'] == week]
 
             for _, row in weekly_data.iterrows():
-                # Type label for each content piece
                 if row['Type'] == "Material":
                     st.markdown("#### 📘 Material")
                 elif row['Type'] == "Assignment":
@@ -43,13 +52,12 @@ if page_choice == "Content":
                 elif row['Type'] == "Question":
                     st.markdown("#### ❓ Question")
                 
-                # Display content details
                 st.write(f"**{row['Title']}**")
                 st.write(row['Content'])
                 if row['Link']:
                     st.write(f"[View Resource]({row['Link']})")
-                st.write("---")  # Separator between entries
+                st.write("---")
 
-elif page_choice == "Students":
+elif st.session_state.page == "Students":
     # Call the student dashboard function
     show_student_dashboard()
