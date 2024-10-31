@@ -33,29 +33,33 @@ def show_student_dashboard():
     num_classes = class_df.shape[0]
     st.write(f"Total Classes: {num_classes}")
 
-    # Display each class as a collapsible section with related content
+    # Display each class as a collapsible section with related weekly content
     for _, class_row in class_df.iterrows():
         class_name = class_row['Class Name']
         
         with st.expander(f"{class_name}"):
-            # Filter content data for this specific class
-            class_content = content_df[content_df['Class Name'] == class_name]  # Assuming 'Class Name' column in Content
-            
-            if not class_content.empty:
-                for _, row in class_content.iterrows():
-                    # Display type label for each content piece
-                    if row['Type'] == "Material":
-                        st.markdown("#### 📘 Material")
-                    elif row['Type'] == "Assignment":
-                        st.markdown("#### 📝 Assignment")
-                    elif row['Type'] == "Question":
-                        st.markdown("#### ❓ Question")
-                    
-                    # Display content details
-                    st.write(f"**{row['Title']}**")
-                    st.write(row['Content'])
-                    if row['Link']:
-                        st.write(f"[View Resource]({row['Link']})")
-                    st.write("---")  # Separator between entries
-            else:
-                st.write("No content available for this class.")
+            # Loop through each week and display all types of content for that week
+            for week in sorted(content_df['Week'].unique()):
+                st.subheader(f"Week {week}")
+
+                # Filter content data for this specific week
+                week_content = content_df[content_df['Week'] == week]
+                
+                if not week_content.empty:
+                    for _, row in week_content.iterrows():
+                        # Display type label for each content piece
+                        if row['Type'] == "Material":
+                            st.markdown("#### 📘 Material")
+                        elif row['Type'] == "Assignment":
+                            st.markdown("#### 📝 Assignment")
+                        elif row['Type'] == "Question":
+                            st.markdown("#### ❓ Question")
+                        
+                        # Display content details
+                        st.write(f"**{row['Title']}**")
+                        st.write(row['Content'])
+                        if row['Link']:
+                            st.write(f"[View Resource]({row['Link']})")
+                        st.write("---")  # Separator between entries
+                else:
+                    st.write("No content available for this week.")
