@@ -5,7 +5,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 def show_create_dashboard():
     st.title("Create & Modify Course Content")
-    st.write("Organized by week, this dashboard allows you to modify existing content, reorder entries, and add new entries for each week.")
+    st.write("Organized by week, this dashboard allows you to modify existing content and reorder entries for each week.")
 
     # Set up Google Sheets API
     scope = ["https://spreadsheets.google.com/feeds", 
@@ -27,7 +27,6 @@ def show_create_dashboard():
 
     # Collect changes in a dictionary
     changes = []
-    new_entries = []  # Separate collection for new entries
 
     # Group data by Week
     st.subheader("Modify Existing Content by Week")
@@ -69,18 +68,6 @@ def show_create_dashboard():
 
                 st.write("---")
 
-            # Add new entry within this week
-            st.write(f"### Add New Entry for Week {week}")
-            new_type = st.selectbox(f"Type (New Entry, Week {week})", ["Material", "Assignment", "Question"], key=f"new_type_{week}")
-            new_title = st.text_input(f"Title (New Entry, Week {week})", key=f"new_title_{week}")
-            new_content = st.text_area(f"Content (New Entry, Week {week})", key=f"new_content_{week}")
-            new_link = st.text_input(f"Link (New Entry, Week {week})", key=f"new_link_{week}")
-
-            # Collect new entry data for batch submission
-            if st.button(f"Add New Entry to Week {week}", key=f"add_{week}"):
-                new_entries.append([week, new_type, new_title, new_content, new_link])
-                st.success(f"New entry added to Week {week} (pending submission)")
-
     # Submit All Changes button with batch processing
     if st.button("Submit All Changes"):
         # Batch update for existing entries
@@ -94,15 +81,9 @@ def show_create_dashboard():
                 })
             content_worksheet.batch_update(batch_updates)
             st.success("All updates applied successfully.")
-
-        # Batch append new entries
-        if new_entries:
-            content_worksheet.append_rows(new_entries)
-            st.success("All new entries added successfully.")
             
-        # Clear changes and new_entries after submission
+        # Clear changes after submission
         changes.clear()
-        new_entries.clear()
 
 def swap_rows(worksheet, row1, row2):
     """Helper function to swap two rows in the Google Sheets worksheet."""
