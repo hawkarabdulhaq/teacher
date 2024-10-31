@@ -4,15 +4,15 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 def show_create_dashboard():
-    st.title("Create & Modify Content")
-    st.write("Here, you can modify the existing content or add new entries to the Content tab.")
+    st.title("Create & Modify Course Content")
+    st.write("Organized by week, this dashboard allows you to modify existing content and add new entries for each week.")
 
     # Set up Google Sheets API
     scope = ["https://spreadsheets.google.com/feeds", 
              "https://www.googleapis.com/auth/spreadsheets", 
              "https://www.googleapis.com/auth/drive.file", 
              "https://www.googleapis.com/auth/drive"]
-
+    
     # Use Streamlit secrets for credentials
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], scope)
     client = gspread.authorize(credentials)
@@ -25,36 +25,41 @@ def show_create_dashboard():
     data = content_worksheet.get_all_records()
     df = pd.DataFrame(data)
 
-    # Display current content for editing
-    st.subheader("Modify Existing Content")
-    for i, row in df.iterrows():
-        st.write(f"### Row {i+1}")
+    # Group data by Week
+    st.subheader("Modify Existing Content by Week")
+    for week in sorted(df['Week'].unique()):
+        week_data = df[df['Week'] == week]
         
-        # Editable fields
-        week = st.number_input(f"Week (Row {i+1})", value=row['Week'], key=f"week_{i}")
-        content_type = st.selectbox(f"Type (Row {i+1})", ["Material", "Assignment", "Question"], index=["Material", "Assignment", "Question"].index(row['Type']), key=f"type_{i}")
-        title = st.text_input(f"Title (Row {i+1})", value=row['Title'], key=f"title_{i}")
-        content = st.text_area(f"Content (Row {i+1})", value=row['Content'], key=f"content_{i}")
-        link = st.text_input(f"Link (Row {i+1})", value=row['Link'], key=f"link_{i}")
+        # Collapsible section for each week
+        with st.expander(f"Week {week}"):
+            for i, row in week_data.iterrows():
+                st.write(f"**{row['Type']} - {row['Title']}**")
+                
+                # Editable fields for each entry
+                content_type = st.selectbox(f"Type (Week {week}, Entry {i+1})", ["Material", "Assignment", "Question"], index=["Material", "Assignment", "Question"].index(row['Type']), key=f"type_{week}_{i}")
+                title = st.text_input(f"Title (Week {week}, Entry {i+1})", value=row['Title'], key=f"title_{week}_{i}")
+                content = st.text_area(f"Content (Week {week}, Entry {i+1})", value=row['Content'], key=f"content_{week}_{i}")
+                link = st.text_input(f"Link (Week {week}, Entry {i+1})", value=row['Link'], key=f"link_{week}_{i}")
 
-        # Save changes to this row
-        if st.button(f"Save Row {i+1}", key=f"save_{i}"):
-            content_worksheet.update_cell(i + 2, 1, week)
-            content_worksheet.update_cell(i + 2, 2, content_type)
-            content_worksheet.update_cell(i + 2, 3, title)
-            content_worksheet.update_cell(i + 2, 4, content)
-            content_worksheet.update_cell(i + 2, 5, link)
-            st.success(f"Row {i+1} updated successfully!")
+                # Button to save changes for this entry
+                if st.button(f"Save Changes (Week {week}, Entry {i+1})", key=f"save_{week}_{i}"):
+                    # Find the exact row in Google Sheets and update
+                    row_index = week_data.index[i] + 2  # +2 to account for header and zero indexing
+                    content_worksheet.update_cell(row_index, 2, content_type)
+                    content_worksheet.update_cell(row_index, 3, title)
+                    content_worksheet.update_cell(row_index, 4, content)
+                    content_worksheet.update_cell(row_index, 5, link)
+                    st.success(f"Entry for Week {week} updated successfully!")
+                st.write("---")
 
-    # Add a new row
-    st.subheader("Add New Content")
-    new_week = st.number_input("Week", min_value=1, step=1, key="new_week")
-    new_type = st.selectbox("Type", ["Material", "Assignment", "Question"], key="new_type")
-    new_title = st.text_input("Title", key="new_title")
-    new_content = st.text_area("Content", key="new_content")
-    new_link = st.text_input("Link", key="new_link")
+            # Add new entry within this week
+            st.write(f"### Add New Entry for Week {week}")
+            new_type = st.selectbox(f"Type (New Entry, Week {week})", ["Material", "Assignment", "Question"], key=f"new_type_{week}")
+            new_title = st.text_input(f"Title (New Entry, Week {week})", key=f"new_title_{week}")
+            new_content = st.text_area(f"Content (New Entry, Week {week})", key=f"new_content_{week}")
+            new_link = st.text_input(f"Link (New Entry, Week {week})", key=f"new_link_{week}")
 
-    if st.button("Add New Row"):
-        # Append the new row at the end of the worksheet
-        content_worksheet.append_row([new_week, new_type, new_title, new_content, new_link])
-        st.success("New row added successfully!")
+            # Button to add new entry for this week
+            if st.button(f"Add New Entry to Week {week}", key=f"add_{week}"):
+                content_worksheet.append_row([week, new_type, new_title, new_content, new_link])
+                st.success(f"New entry added to Week {week} successfully!")
