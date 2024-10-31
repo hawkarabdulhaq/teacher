@@ -11,14 +11,14 @@ def show_student_dashboard():
              "https://www.googleapis.com/auth/spreadsheets", 
              "https://www.googleapis.com/auth/drive.file", 
              "https://www.googleapis.com/auth/drive"]
-    
+
     # Use Streamlit secrets for credentials
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], scope)
     client = gspread.authorize(credentials)
 
-    # Load both ContentID and Class worksheets from Google Sheets
+    # Load both Content and Class worksheets from Google Sheets
     sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1IWn53fkhx_rznRJOGLqx-HlxOz7dffq6WiO_BRYe1aM/edit#gid=171068923")
-    content_worksheet = sheet.worksheet("ContentID")
+    content_worksheet = sheet.worksheet("Content")
     class_worksheet = sheet.worksheet("Class")
 
     # Fetch data
