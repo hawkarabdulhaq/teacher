@@ -4,53 +4,57 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 def show_create_dashboard():
-    st.title("Create Dashboard")
-    st.write("Modify the content table directly from here.")
+    st.title("Create & Modify Content")
+    st.write("Here, you can modify the existing content or add new entries to the Content tab.")
 
-    # Google Sheets API setup
+    # Set up Google Sheets API
     scope = ["https://spreadsheets.google.com/feeds", 
              "https://www.googleapis.com/auth/spreadsheets", 
              "https://www.googleapis.com/auth/drive.file", 
              "https://www.googleapis.com/auth/drive"]
 
+    # Use Streamlit secrets for credentials
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], scope)
     client = gspread.authorize(credentials)
 
-    # Load the 'Content' worksheet
+    # Load Content worksheet
     sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1IWn53fkhx_rznRJOGLqx-HlxOz7dffq6WiO_BRYe1aM/edit#gid=171068923")
-    worksheet = sheet.worksheet("Content")
-    data = worksheet.get_all_records()
+    content_worksheet = sheet.worksheet("Content")
+
+    # Fetch data
+    data = content_worksheet.get_all_records()
     df = pd.DataFrame(data)
 
-    # Display the content table with editable fields
-    st.subheader("Edit Existing Content")
-    edited_df = pd.DataFrame()
+    # Display current content for editing
+    st.subheader("Modify Existing Content")
+    for i, row in df.iterrows():
+        st.write(f"### Row {i+1}")
+        
+        # Editable fields
+        week = st.number_input(f"Week (Row {i+1})", value=row['Week'], key=f"week_{i}")
+        content_type = st.selectbox(f"Type (Row {i+1})", ["Material", "Assignment", "Question"], index=["Material", "Assignment", "Question"].index(row['Type']), key=f"type_{i}")
+        title = st.text_input(f"Title (Row {i+1})", value=row['Title'], key=f"title_{i}")
+        content = st.text_area(f"Content (Row {i+1})", value=row['Content'], key=f"content_{i}")
+        link = st.text_input(f"Link (Row {i+1})", value=row['Link'], key=f"link_{i}")
 
-    # Collect user edits for each cell in a form
-    with st.form("edit_form"):
-        for index, row in df.iterrows():
-            st.write(f"### Row {index + 1}")
-            edited_row = {}
-            for col in df.columns:
-                edited_row[col] = st.text_input(f"{col}", value=row[col])
-            edited_df = edited_df.append(edited_row, ignore_index=True)
+        # Save changes to this row
+        if st.button(f"Save Row {i+1}", key=f"save_{i}"):
+            content_worksheet.update_cell(i + 2, 1, week)
+            content_worksheet.update_cell(i + 2, 2, content_type)
+            content_worksheet.update_cell(i + 2, 3, title)
+            content_worksheet.update_cell(i + 2, 4, content)
+            content_worksheet.update_cell(i + 2, 5, link)
+            st.success(f"Row {i+1} updated successfully!")
 
-        # Update button
-        submit_edit = st.form_submit_button("Update Table")
+    # Add a new row
+    st.subheader("Add New Content")
+    new_week = st.number_input("Week", min_value=1, step=1, key="new_week")
+    new_type = st.selectbox("Type", ["Material", "Assignment", "Question"], key="new_type")
+    new_title = st.text_input("Title", key="new_title")
+    new_content = st.text_area("Content", key="new_content")
+    new_link = st.text_input("Link", key="new_link")
 
-    # Update the Google Sheet if edits were submitted
-    if submit_edit:
-        worksheet.clear()  # Clear existing data
-        worksheet.update([df.columns.values.tolist()] + edited_df.values.tolist())
-        st.success("Table updated successfully!")
-    
-    # Section to add a new row
-    st.subheader("Add New Row")
-    new_row_data = {}
-    for col in df.columns:
-        new_row_data[col] = st.text_input(f"New {col}")
-    
-    if st.button("Add Row"):
-        new_row = [new_row_data[col] for col in df.columns]
-        worksheet.append_row(new_row)
+    if st.button("Add New Row"):
+        # Append the new row at the end of the worksheet
+        content_worksheet.append_row([new_week, new_type, new_title, new_content, new_link])
         st.success("New row added successfully!")
