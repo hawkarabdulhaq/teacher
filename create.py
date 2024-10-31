@@ -87,8 +87,9 @@ def show_create_dashboard():
         if changes:
             batch_updates = []
             for change in changes:
+                # Set the range from column B (Type) to column E (Link) for the correct row
                 batch_updates.append({
-                    "range": f"A{change['row']}:E{change['row']}",
+                    "range": f"B{change['row']}:E{change['row']}",
                     "values": [[change["Type"], change["Title"], change["Content"], change["Link"]]]
                 })
             content_worksheet.batch_update(batch_updates)
