@@ -7,8 +7,8 @@ from create import show_create_dashboard  # Import the create dashboard function
 from enroll import show_enroll_page  # Import the enroll page function
 
 # Define login credentials (replace with more secure handling in production)
-USERNAME = "admin"
-PASSWORD = "password123"  # Replace with a stronger password
+USERNAME = "habdulhaq"
+PASSWORD = "Garnet87"  # Replace with a stronger password
 
 # Simple login function
 def login():
