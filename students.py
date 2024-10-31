@@ -3,68 +3,60 @@ import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-def load_student_data():
-    # Google Sheets API setup using Streamlit secrets
+def show_student_dashboard():
+    st.title("Student Dashboard")
+    
+    # Set up Google Sheets API
     scope = ["https://spreadsheets.google.com/feeds", 
              "https://www.googleapis.com/auth/spreadsheets", 
              "https://www.googleapis.com/auth/drive.file", 
              "https://www.googleapis.com/auth/drive"]
-
-    # Load credentials from Streamlit secrets
+    
+    # Use Streamlit secrets for credentials
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], scope)
     client = gspread.authorize(credentials)
 
-    # Load data from Google Sheets
+    # Load both Content and Class worksheets from Google Sheets
     sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1IWn53fkhx_rznRJOGLqx-HlxOz7dffq6WiO_BRYe1aM/edit#gid=171068923")
-    student_worksheet = sheet.worksheet("Students")  # Update this to your actual worksheet name if different
     content_worksheet = sheet.worksheet("Content")
+    class_worksheet = sheet.worksheet("Class")
 
-    # Load data into DataFrames
-    student_data = pd.DataFrame(student_worksheet.get_all_records())
-    content_data = pd.DataFrame(content_worksheet.get_all_records())
-    
-    return student_data, content_data
+    # Fetch data
+    content_data = content_worksheet.get_all_records()
+    class_data = class_worksheet.get_all_records()
 
-def show_student_dashboard():
-    st.title("Student Dashboard")
-    
-    # Load student and content data
-    student_data, content_data = load_student_data()
+    # Convert to DataFrames
+    content_df = pd.DataFrame(content_data)
+    class_df = pd.DataFrame(class_data)
 
-    # Get unique classes from student data
-    classes = student_data['Class Name'].unique()
-    
-    # Display each class as a collapsible section
-    for class_name in classes:
-        with st.expander(f"Class: {class_name}"):
-            # Filter students by class
-            class_students = student_data[student_data['Class Name'] == class_name]
+    # Display total number of classes
+    num_classes = class_df.shape[0]
+    st.write(f"Total Classes: {num_classes}")
 
-            # Display students in the class
-            st.subheader("Students")
-            for _, student in class_students.iterrows():
-                st.write(f"**{student['Student Name']}** - ID: {student['Student ID']}")
-
-            # Display course content for the class
-            st.subheader("Course Content")
-            class_content = content_data  # Assuming all content applies to all classes
+    # Display each class as a collapsible section with related content
+    for _, class_row in class_df.iterrows():
+        class_name = class_row['Class Name']
+        class_id = class_row['Class ID']
+        
+        with st.expander(f"{class_name} (ID: {class_id})"):
+            # Filter content data for this specific class
+            class_content = content_df[content_df['Week'] == class_name]  # Adjust if needed based on your data structure
             
-            # Loop through each week and display content
-            for week in sorted(class_content['Week'].unique()):
-                with st.expander(f"Week {week}"):
-                    weekly_data = class_content[class_content['Week'] == week]
-
-                    for _, row in weekly_data.iterrows():
-                        if row['Type'] == "Material":
-                            st.markdown("#### 📘 Material")
-                        elif row['Type'] == "Assignment":
-                            st.markdown("#### 📝 Assignment")
-                        elif row['Type'] == "Question":
-                            st.markdown("#### ❓ Question")
-                        
-                        st.write(f"**{row['Title']}**")
-                        st.write(row['Content'])
-                        if row['Link']:
-                            st.write(f"[View Resource]({row['Link']})")
-                        st.write("---")
-
+            if not class_content.empty:
+                for _, row in class_content.iterrows():
+                    # Display type label for each content piece
+                    if row['Type'] == "Material":
+                        st.markdown("#### 📘 Material")
+                    elif row['Type'] == "Assignment":
+                        st.markdown("#### 📝 Assignment")
+                    elif row['Type'] == "Question":
+                        st.markdown("#### ❓ Question")
+                    
+                    # Display content details
+                    st.write(f"**{row['Title']}**")
+                    st.write(row['Content'])
+                    if row['Link']:
+                        st.write(f"[View Resource]({row['Link']})")
+                    st.write("---")  # Separator between entries
+            else:
+                st.write("No content available for this class.")
