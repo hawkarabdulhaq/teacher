@@ -27,6 +27,7 @@ def show_create_dashboard():
 
     # Collect changes in a dictionary
     changes = []
+    new_entries = []  # Separate collection for new entries
 
     # Group data by Week
     st.subheader("Modify Existing Content by Week")
@@ -47,7 +48,7 @@ def show_create_dashboard():
                 # Calculate the correct row index in Google Sheets (adjusted for header row)
                 row_index = df.index[df['Title'] == row['Title']].tolist()[0] + 2  # +2 to account for header and 0-based indexing
 
-                # Store the changes
+                # Store the changes for batch updating
                 changes.append({
                     "row": row_index,
                     "Type": content_type,
@@ -75,31 +76,32 @@ def show_create_dashboard():
             new_content = st.text_area(f"Content (New Entry, Week {week})", key=f"new_content_{week}")
             new_link = st.text_input(f"Link (New Entry, Week {week})", key=f"new_link_{week}")
 
-            # Button to add new entry for this week (collect changes)
+            # Collect new entry data for batch submission
             if st.button(f"Add New Entry to Week {week}", key=f"add_{week}"):
-                changes.append({
-                    "row": len(df) + 2,  # Add at the end
-                    "Type": new_type,
-                    "Title": new_title,
-                    "Content": new_content,
-                    "Link": new_link,
-                    "Week": week
-                })
+                new_entries.append([week, new_type, new_title, new_content, new_link])
                 st.success(f"New entry added to Week {week} (pending submission)")
 
-    # Submit All Changes button
+    # Submit All Changes button with batch processing
     if st.button("Submit All Changes"):
-        for change in changes:
-            if "Week" in change:
-                # For new entries, append row
-                content_worksheet.append_row([change["Week"], change["Type"], change["Title"], change["Content"], change["Link"]])
-            else:
-                # For edits, update each cell in the specified row
-                content_worksheet.update_cell(change["row"], 2, change["Type"])
-                content_worksheet.update_cell(change["row"], 3, change["Title"])
-                content_worksheet.update_cell(change["row"], 4, change["Content"])
-                content_worksheet.update_cell(change["row"], 5, change["Link"])
-        st.success("All changes submitted successfully!")
+        # Batch update for existing entries
+        if changes:
+            batch_updates = []
+            for change in changes:
+                batch_updates.append({
+                    "range": f"A{change['row']}:E{change['row']}",
+                    "values": [[change["Type"], change["Title"], change["Content"], change["Link"]]]
+                })
+            content_worksheet.batch_update(batch_updates)
+            st.success("All updates applied successfully.")
+
+        # Batch append new entries
+        if new_entries:
+            content_worksheet.append_rows(new_entries)
+            st.success("All new entries added successfully.")
+            
+        # Clear changes and new_entries after submission
+        changes.clear()
+        new_entries.clear()
 
 def swap_rows(worksheet, row1, row2):
     """Helper function to swap two rows in the Google Sheets worksheet."""
