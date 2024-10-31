@@ -26,40 +26,24 @@ st.title("Teacher Dashboard: Course Content")
 st.sidebar.header("Select Week")
 selected_week = st.sidebar.selectbox("Week", sorted(df['Week'].unique()))
 
-# Display each week’s content in collapsible sections
+# Display each week’s content in a single collapsible section
 for week in sorted(df['Week'].unique()):
     with st.expander(f"Week {week}", expanded=(week == selected_week)):
         weekly_data = df[df['Week'] == week]
-        
-        # Tabs for content type
-        tab_materials, tab_assignments, tab_questions = st.tabs(["Materials", "Assignments", "Questions"])
-        
-        # Display Materials
-        with tab_materials:
-            materials = weekly_data[weekly_data['Type'] == "Material"]
-            for _, row in materials.iterrows():
-                st.write(f"**{row['Title']}**")
-                st.write(row['Content'])
-                if row['Link']:
-                    st.write(f"[View Resource]({row['Link']})")
-                st.write("---")
-        
-        # Display Assignments
-        with tab_assignments:
-            assignments = weekly_data[weekly_data['Type'] == "Assignment"]
-            for _, row in assignments.iterrows():
-                st.write(f"**{row['Title']}**")
-                st.write(row['Content'])
-                if row['Link']:
-                    st.write(f"[View Resource]({row['Link']})")
-                st.write("---")
-        
-        # Display Questions
-        with tab_questions:
-            questions = weekly_data[weekly_data['Type'] == "Question"]
-            for _, row in questions.iterrows():
-                st.write(f"**{row['Title']}**")
-                st.write(row['Content'])
-                if row['Link']:
-                    st.write(f"[View Resource]({row['Link']})")
-                st.write("---")
+
+        # Loop through each row within the selected week
+        for _, row in weekly_data.iterrows():
+            # Add type label as a badge or header to distinguish content
+            if row['Type'] == "Material":
+                st.markdown("#### 📘 Material")
+            elif row['Type'] == "Assignment":
+                st.markdown("#### 📝 Assignment")
+            elif row['Type'] == "Question":
+                st.markdown("#### ❓ Question")
+            
+            # Display title, content, and link
+            st.write(f"**{row['Title']}**")
+            st.write(row['Content'])
+            if row['Link']:
+                st.write(f"[View Resource]({row['Link']})")
+            st.write("---")  # Separator between entries
