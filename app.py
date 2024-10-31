@@ -15,7 +15,7 @@ client = gspread.authorize(credentials)
 
 # Load data from Google Sheets
 sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1IWn53fkhx_rznRJOGLqx-HlxOz7dffq6WiO_BRYe1aM/edit#gid=171068923")
-worksheet = sheet.worksheet("content")
+worksheet = sheet.worksheet("Content")
 data = worksheet.get_all_records()
 df = pd.DataFrame(data)
 
