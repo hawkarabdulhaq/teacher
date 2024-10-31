@@ -37,7 +37,10 @@ def show_student_dashboard():
     for _, class_row in class_df.iterrows():
         class_name = class_row['Class Name']
         
-        with st.expander(f"{class_name}"):
+        # Custom HTML styling for larger, bold class name
+        class_title = f"<h3 style='font-weight: bold;'>{class_name}</h3>"
+        
+        with st.expander(st.markdown(class_title, unsafe_allow_html=True)):
             # Loop through each week and display content for that week
             for week in sorted(content_df['Week'].unique()):
                 st.subheader(f"Week {week}")
