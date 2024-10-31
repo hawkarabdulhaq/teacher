@@ -22,13 +22,9 @@ df = pd.DataFrame(data)
 # Streamlit app layout
 st.title("Teacher Dashboard: Course Content")
 
-# Sidebar with weeks navigation
-st.sidebar.header("Select Week")
-selected_week = st.sidebar.selectbox("Week", sorted(df['Week'].unique()))
-
 # Display each week’s content in a single collapsible section
 for week in sorted(df['Week'].unique()):
-    with st.expander(f"Week {week}", expanded=(week == selected_week)):
+    with st.expander(f"Week {week}"):
         weekly_data = df[df['Week'] == week]
 
         # Loop through each row within the selected week
