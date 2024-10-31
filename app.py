@@ -6,74 +6,98 @@ from students import show_student_dashboard  # Import the student dashboard func
 from create import show_create_dashboard  # Import the create dashboard function
 from enroll import show_enroll_page  # Import the enroll page function
 
-# Google Sheets API setup using Streamlit secrets
-scope = ["https://spreadsheets.google.com/feeds", 
-         "https://www.googleapis.com/auth/spreadsheets", 
-         "https://www.googleapis.com/auth/drive.file", 
-         "https://www.googleapis.com/auth/drive"]
+# Define login credentials (replace with more secure handling in production)
+USERNAME = "admin"
+PASSWORD = "password123"  # Replace with a stronger password
 
-# Load the Google Sheets API credentials from Streamlit secrets
-credentials = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], scope)
-client = gspread.authorize(credentials)
+# Simple login function
+def login():
+    st.sidebar.title("Login")
+    username = st.sidebar.text_input("Username")
+    password = st.sidebar.text_input("Password", type="password")
+    if st.sidebar.button("Login"):
+        if username == USERNAME and password == PASSWORD:
+            st.session_state["logged_in"] = True
+            st.sidebar.success("Login successful")
+        else:
+            st.sidebar.error("Incorrect username or password")
 
-# Load data from Google Sheets
-sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1IWn53fkhx_rznRJOGLqx-HlxOz7dffq6WiO_BRYe1aM/edit#gid=171068923")
-worksheet = sheet.worksheet("Content")
-data = worksheet.get_all_records()
-df = pd.DataFrame(data)
+# Check if user is logged in
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
 
-# Sidebar Navigation with Buttons
-st.sidebar.title("Navigation")
-content_button = st.sidebar.button("Content")
-students_button = st.sidebar.button("Students")
-create_button = st.sidebar.button("Create")
-enroll_button = st.sidebar.button("Enroll")  # New Enroll button
+# Only show the app if logged in
+if not st.session_state["logged_in"]:
+    login()
+else:
+    # Google Sheets API setup using Streamlit secrets
+    scope = ["https://spreadsheets.google.com/feeds", 
+             "https://www.googleapis.com/auth/spreadsheets", 
+             "https://www.googleapis.com/auth/drive.file", 
+             "https://www.googleapis.com/auth/drive"]
 
-# Set the current page based on button clicks
-if 'page' not in st.session_state:
-    st.session_state.page = "Content"  # Default page
+    # Load the Google Sheets API credentials from Streamlit secrets
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], scope)
+    client = gspread.authorize(credentials)
 
-if content_button:
-    st.session_state.page = "Content"
-elif students_button:
-    st.session_state.page = "Students"
-elif create_button:
-    st.session_state.page = "Create"
-elif enroll_button:
-    st.session_state.page = "Enroll"  # New Enroll page
+    # Load data from Google Sheets
+    sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1IWn53fkhx_rznRJOGLqx-HlxOz7dffq6WiO_BRYe1aM/edit#gid=171068923")
+    worksheet = sheet.worksheet("Content")
+    data = worksheet.get_all_records()
+    df = pd.DataFrame(data)
 
-# Display the appropriate page based on selection
-if st.session_state.page == "Content":
-    # Display course content
-    st.title("Course Content")
+    # Sidebar Navigation with Buttons
+    st.sidebar.title("Navigation")
+    content_button = st.sidebar.button("Content")
+    students_button = st.sidebar.button("Students")
+    create_button = st.sidebar.button("Create")
+    enroll_button = st.sidebar.button("Enroll")  # New Enroll button
 
-    # Loop through each week and show all types of content together
-    for week in sorted(df['Week'].unique()):
-        with st.expander(f"Week {week}"):
-            weekly_data = df[df['Week'] == week]
+    # Set the current page based on button clicks
+    if 'page' not in st.session_state:
+        st.session_state.page = "Content"  # Default page
 
-            for _, row in weekly_data.iterrows():
-                if row['Type'] == "Material":
-                    st.markdown("#### 📘 Material")
-                elif row['Type'] == "Assignment":
-                    st.markdown("#### 📝 Assignment")
-                elif row['Type'] == "Question":
-                    st.markdown("#### ❓ Question")
-                
-                st.write(f"**{row['Title']}**")
-                st.write(row['Content'])
-                if row['Link']:
-                    st.write(f"[View Resource]({row['Link']})")
-                st.write("---")
+    if content_button:
+        st.session_state.page = "Content"
+    elif students_button:
+        st.session_state.page = "Students"
+    elif create_button:
+        st.session_state.page = "Create"
+    elif enroll_button:
+        st.session_state.page = "Enroll"  # New Enroll page
 
-elif st.session_state.page == "Students":
-    # Call the student dashboard function
-    show_student_dashboard()
+    # Display the appropriate page based on selection
+    if st.session_state.page == "Content":
+        # Display course content
+        st.title("Course Content")
 
-elif st.session_state.page == "Create":
-    # Call the create dashboard function
-    show_create_dashboard()
+        # Loop through each week and show all types of content together
+        for week in sorted(df['Week'].unique()):
+            with st.expander(f"Week {week}"):
+                weekly_data = df[df['Week'] == week]
 
-elif st.session_state.page == "Enroll":
-    # Call the enroll page function
-    show_enroll_page()
+                for _, row in weekly_data.iterrows():
+                    if row['Type'] == "Material":
+                        st.markdown("#### 📘 Material")
+                    elif row['Type'] == "Assignment":
+                        st.markdown("#### 📝 Assignment")
+                    elif row['Type'] == "Question":
+                        st.markdown("#### ❓ Question")
+                    
+                    st.write(f"**{row['Title']}**")
+                    st.write(row['Content'])
+                    if row['Link']:
+                        st.write(f"[View Resource]({row['Link']})")
+                    st.write("---")
+
+    elif st.session_state.page == "Students":
+        # Call the student dashboard function
+        show_student_dashboard()
+
+    elif st.session_state.page == "Create":
+        # Call the create dashboard function
+        show_create_dashboard()
+
+    elif st.session_state.page == "Enroll":
+        # Call the enroll page function
+        show_enroll_page()
