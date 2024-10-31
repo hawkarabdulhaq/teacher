@@ -3,6 +3,7 @@ import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from students import show_student_dashboard  # Import the student dashboard function
+from create import show_create_dashboard  # Import the create dashboard function
 
 # Google Sheets API setup using Streamlit secrets
 scope = ["https://spreadsheets.google.com/feeds", 
@@ -24,6 +25,7 @@ df = pd.DataFrame(data)
 st.sidebar.title("Navigation")
 content_button = st.sidebar.button("Content")
 students_button = st.sidebar.button("Students")
+create_button = st.sidebar.button("Create")  # New Create button
 
 # Set the current page based on button clicks
 if 'page' not in st.session_state:
@@ -33,8 +35,10 @@ if content_button:
     st.session_state.page = "Content"
 elif students_button:
     st.session_state.page = "Students"
+elif create_button:
+    st.session_state.page = "Create"  # New Create page
 
-# Display Content or Students page based on current page selection
+# Display Content, Students, or Create page based on selection
 if st.session_state.page == "Content":
     # Display course content
     st.title("Course Content")
@@ -61,3 +65,7 @@ if st.session_state.page == "Content":
 elif st.session_state.page == "Students":
     # Call the student dashboard function
     show_student_dashboard()
+
+elif st.session_state.page == "Create":
+    # Call the create dashboard function
+    show_create_dashboard()
