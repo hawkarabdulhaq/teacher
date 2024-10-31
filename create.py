@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import time
 
 def show_create_dashboard():
     st.title("Create & Modify Course Content")
@@ -25,15 +26,8 @@ def show_create_dashboard():
     data = content_worksheet.get_all_records()
     df = pd.DataFrame(data)
 
-    # Define custom button styles using HTML and CSS
-    button_styles = """
-    <style>
-        .save-button {background-color: #4CAF50; color: white; padding: 8px 16px; border: none; cursor: pointer; font-weight: bold;}
-        .move-up-button {background-color: #2196F3; color: white; padding: 8px 16px; border: none; cursor: pointer; font-weight: bold;}
-        .move-down-button {background-color: #FF9800; color: white; padding: 8px 16px; border: none; cursor: pointer; font-weight: bold;}
-    </style>
-    """
-    st.markdown(button_styles, unsafe_allow_html=True)
+    # Queue for batched updates
+    updates = []
 
     # Group data by Week
     st.subheader("Modify Existing Content by Week")
@@ -54,46 +48,21 @@ def show_create_dashboard():
                 # Calculate the correct row index in Google Sheets (adjusted for header row)
                 row_index = df.index[df['Title'] == row['Title']].tolist()[0] + 2  # +2 to account for header and 0-based indexing
 
-                # Save button
-                if st.markdown(f"<button class='save-button' onclick='document.getElementById(\"save_{week}_{i}\").click()'>Save Changes</button>", unsafe_allow_html=True):
-                    st.button(f"Save Changes (Week {week}, Entry {i+1})", key=f"save_{week}_{i}")
-                    content_worksheet.update_cell(row_index, 2, content_type)
-                    content_worksheet.update_cell(row_index, 3, title)
-                    content_worksheet.update_cell(row_index, 4, content)
-                    content_worksheet.update_cell(row_index, 5, link)
-                    st.success(f"Entry for Week {week} updated successfully!")
+                # Queue the update instead of directly saving
+                if st.button(f"Queue Changes for Entry {i+1} (Week {week})", key=f"queue_{week}_{i}"):
+                    updates.append((row_index, content_type, title, content, link))
+                    st.info(f"Changes for Entry {i+1} have been added to the queue.")
 
-                # Move Up button
-                if i > 0 and st.markdown(f"<button class='move-up-button' onclick='document.getElementById(\"move_up_{week}_{i}\").click()'>Move Up</button>", unsafe_allow_html=True):
-                    st.button(f"Move Up (Entry {i+1})", key=f"move_up_{week}_{i}")
-                    swap_rows(content_worksheet, row_index, row_index - 1)
-                    st.success("Moved entry up successfully!")
-
-                # Move Down button
-                if i < len(week_data) - 1 and st.markdown(f"<button class='move-down-button' onclick='document.getElementById(\"move_down_{week}_{i}\").click()'>Move Down</button>", unsafe_allow_html=True):
-                    st.button(f"Move Down (Entry {i+1})", key=f"move_down_{week}_{i}")
-                    swap_rows(content_worksheet, row_index, row_index + 1)
-                    st.success("Moved entry down successfully!")
-                
                 st.write("---")
 
-            # Add new entry within this week
-            st.write(f"### Add New Entry for Week {week}")
-            new_type = st.selectbox(f"Type (New Entry, Week {week})", ["Material", "Assignment", "Question"], key=f"new_type_{week}")
-            new_title = st.text_input(f"Title (New Entry, Week {week})", key=f"new_title_{week}")
-            new_content = st.text_area(f"Content (New Entry, Week {week})", key=f"new_content_{week}")
-            new_link = st.text_input(f"Link (New Entry, Week {week})", key=f"new_link_{week}")
-
-            # Button to add new entry for this week
-            if st.button(f"Add New Entry to Week {week}", key=f"add_{week}"):
-                content_worksheet.append_row([week, new_type, new_title, new_content, new_link])
-                st.success(f"New entry added to Week {week} successfully!")
-
-def swap_rows(worksheet, row1, row2):
-    """Helper function to swap two rows in the Google Sheets worksheet."""
-    row1_data = worksheet.row_values(row1)
-    row2_data = worksheet.row_values(row2)
-    
-    # Swap the rows
-    worksheet.update(f"A{row1}:E{row1}", [row2_data])
-    worksheet.update(f"A{row2}:E{row2}", [row1_data])
+    # Button to submit all queued updates
+    if st.button("Submit All Changes"):
+        for row_index, content_type, title, content, link in updates:
+            # Batch update queued rows
+            content_worksheet.update_cell(row_index, 2, content_type)
+            content_worksheet.update_cell(row_index, 3, title)
+            content_worksheet.update_cell(row_index, 4, content)
+            content_worksheet.update_cell(row_index, 5, link)
+            time.sleep(1)  # Add a delay to avoid hitting API limits
+        st.success("All changes have been successfully submitted!")
+        updates.clear()  # Clear the queue after updates
