@@ -36,11 +36,10 @@ def show_student_dashboard():
     # Display each class as a collapsible section with related content
     for _, class_row in class_df.iterrows():
         class_name = class_row['Class Name']
-        class_id = class_row['Class ID']
         
-        with st.expander(f"{class_name} (ID: {class_id})"):
+        with st.expander(f"{class_name}"):
             # Filter content data for this specific class
-            class_content = content_df[content_df['Week'] == class_name]  # Adjust if needed based on your data structure
+            class_content = content_df[content_df['Class Name'] == class_name]  # Assuming 'Class Name' column in Content
             
             if not class_content.empty:
                 for _, row in class_content.iterrows():
