@@ -20,20 +20,22 @@ worksheet = sheet.worksheet("Content")
 data = worksheet.get_all_records()
 df = pd.DataFrame(data)
 
-# Main navigation using tabs
-tab1, tab2 = st.tabs(["Content", "Students"])
+# Sidebar Navigation
+st.sidebar.title("Navigation")
+page_choice = st.sidebar.radio("Select Page", ["Content", "Students"])
 
-with tab1:
-    # Content tab for displaying course content
-    st.title("Teacher Dashboard: Course Content")
+# Display Content or Students page based on selection
+if page_choice == "Content":
+    # Display course content
+    st.title("Course Content")
 
-    # Loop through each week and display all content types under it
+    # Loop through each week and show all types of content together
     for week in sorted(df['Week'].unique()):
         with st.expander(f"Week {week}"):
             weekly_data = df[df['Week'] == week]
 
             for _, row in weekly_data.iterrows():
-                # Distinguish between content types
+                # Type label for each content piece
                 if row['Type'] == "Material":
                     st.markdown("#### 📘 Material")
                 elif row['Type'] == "Assignment":
@@ -41,13 +43,13 @@ with tab1:
                 elif row['Type'] == "Question":
                     st.markdown("#### ❓ Question")
                 
-                # Display title, content, and link
+                # Display content details
                 st.write(f"**{row['Title']}**")
                 st.write(row['Content'])
                 if row['Link']:
                     st.write(f"[View Resource]({row['Link']})")
                 st.write("---")  # Separator between entries
 
-with tab2:
-    # Call the student dashboard function from students.py
+elif page_choice == "Students":
+    # Call the student dashboard function
     show_student_dashboard()
