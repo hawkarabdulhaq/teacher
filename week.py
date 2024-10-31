@@ -55,6 +55,3 @@ def update_post_dates():
     for update in updates:
         post_worksheet.update_cell(update["row"], update["col"], update["date"])
     st.success("Post dates updated successfully for the current week!")
-
-# Call the function to update post dates
-update_post_dates()
