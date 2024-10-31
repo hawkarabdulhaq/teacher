@@ -32,26 +32,28 @@ def update_post_dates():
     # Map the current week number to the appropriate column in the Week tab
     week_column = f"Week {week_num}"  # Maps to columns like 'Week 1', 'Week 2', etc.
 
-    # Collect updates for each class based on current week
-    updates = []
-    for class_name in post_df.columns[5:]:  # Start from column G onward
-        # Find the row in the Week tab for this class
-        week_row = week_df[week_df['Class Name'] == class_name]
-        if not week_row.empty and week_column in week_row.columns:
-            # Get the date for the current week for this class
-            date_value = week_row.iloc[0][week_column]
-            # Find the row index in Post tab to update
-            post_row_index = post_df.index[post_df['Week 1'] == week_num].tolist()
-            if post_row_index:
-                post_row = post_row_index[0] + 2  # Adjust for header row in Google Sheets
-                col_index = post_df.columns.get_loc(class_name) + 1  # Column index to update
-                updates.append({
-                    "row": post_row,
-                    "col": col_index,
-                    "date": date_value
-                })
+    # Loop through each row in the Post tab to apply the correct dates
+    for i, post_row in post_df.iterrows():
+        # Check if the row's week matches the current week
+        if post_row[current_week_col] == week_num:
+            # Loop through each class starting from the relevant columns (e.g., column 'G' onward)
+            for class_name in post_df.columns[5:]:
+                # Find the corresponding class row in the Week tab
+                week_row = week_df[week_df['Class Name'] == class_name]
+                
+                # Only update if the week_row exists and has the correct week column
+                if not week_row.empty and week_column in week_row.columns:
+                    # Get the date for the current week for this class
+                    date_value = week_row.iloc[0][week_column]
+                    
+                    # Get the row index and column index in the Post sheet
+                    post_row_index = i + 2  # Adjust for header row in Google Sheets
+                    class_col_index = post_df.columns.get_loc(class_name) + 1  # Column index to update
+                    
+                    # Update the cell in the Post tab
+                    post_worksheet.update_cell(post_row_index, class_col_index, date_value)
 
-    # Apply all updates in one batch
-    for update in updates:
-        post_worksheet.update_cell(update["row"], update["col"], update["date"])
-    st.success("Post dates updated successfully for the current week!")
+    st.success("Post dates updated successfully for all rows in the current week!")
+
+# Call the function to update post dates
+update_post_dates()
