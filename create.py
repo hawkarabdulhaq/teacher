@@ -41,10 +41,12 @@ def show_create_dashboard():
                 content = st.text_area(f"Content (Week {week}, Entry {i+1})", value=row['Content'], key=f"content_{week}_{i}")
                 link = st.text_input(f"Link (Week {week}, Entry {i+1})", value=row['Link'], key=f"link_{week}_{i}")
 
+                # Calculate the correct row index in Google Sheets (adjusted for header row)
+                row_index = df.index[df['Title'] == row['Title']].tolist()[0] + 2  # +2 to account for header and 0-based indexing
+                
                 # Button to save changes for this entry
                 if st.button(f"Save Changes (Week {week}, Entry {i+1})", key=f"save_{week}_{i}"):
-                    # Find the exact row in Google Sheets and update
-                    row_index = week_data.index[i] + 2  # +2 to account for header and zero indexing
+                    # Update the correct row in Google Sheets
                     content_worksheet.update_cell(row_index, 2, content_type)
                     content_worksheet.update_cell(row_index, 3, title)
                     content_worksheet.update_cell(row_index, 4, content)
