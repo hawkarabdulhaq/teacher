@@ -5,7 +5,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 from students import show_student_dashboard  # Import the student dashboard function
 from create import show_create_dashboard  # Import the create dashboard function
 from enroll import show_enroll_page  # Import the enroll page function
-from week import update_post_dates  # Import the update function from week.py
 
 # Google Sheets API setup using Streamlit secrets
 scope = ["https://spreadsheets.google.com/feeds", 
@@ -78,6 +77,3 @@ elif st.session_state.page == "Create":
 elif st.session_state.page == "Enroll":
     # Call the enroll page function
     show_enroll_page()
-
-# Call update_post_dates function from week.py to run after app execution
-update_post_dates()
