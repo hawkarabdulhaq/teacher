@@ -34,13 +34,22 @@ def show_enroll_page():
         class_name = row['Class Name']
         current_date = row['Date']
         
+        # Handle empty date cells by setting a default date (e.g., today's date)
+        if current_date:
+            try:
+                parsed_date = datetime.strptime(current_date, "%d.%m.%Y")
+            except ValueError:
+                parsed_date = datetime.today()
+        else:
+            parsed_date = datetime.today()
+
         # Show class name and current enrollment date
         st.write(f"### {class_name}")
-        st.write(f"Current Enrollment Date: {current_date}")
+        st.write(f"Current Enrollment Date: {current_date or 'Not set'}")
 
         # Date input for updating the enrollment date
         new_date = st.date_input(f"Set new enrollment date for {class_name}", 
-                                 value=datetime.strptime(current_date, "%d.%m.%Y"), 
+                                 value=parsed_date, 
                                  key=f"date_{i}")
 
         # Store the new date in the format required for the Google Sheet
