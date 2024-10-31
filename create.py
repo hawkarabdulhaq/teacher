@@ -5,7 +5,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 def show_create_dashboard():
     st.title("Create & Modify Course Content")
-    st.write("Organized by week, this dashboard allows you to modify existing content and add new entries for each week.")
+    st.write("Organized by week, this dashboard allows you to modify existing content, move entries, and add new entries for each week.")
 
     # Set up Google Sheets API
     scope = ["https://spreadsheets.google.com/feeds", 
@@ -43,8 +43,8 @@ def show_create_dashboard():
 
                 # Calculate the correct row index in Google Sheets (adjusted for header row)
                 row_index = df.index[df['Title'] == row['Title']].tolist()[0] + 2  # +2 to account for header and 0-based indexing
-                
-                # Button to save changes for this entry
+
+                # Save button
                 if st.button(f"Save Changes (Week {week}, Entry {i+1})", key=f"save_{week}_{i}"):
                     # Update the correct row in Google Sheets
                     content_worksheet.update_cell(row_index, 2, content_type)
@@ -52,6 +52,17 @@ def show_create_dashboard():
                     content_worksheet.update_cell(row_index, 4, content)
                     content_worksheet.update_cell(row_index, 5, link)
                     st.success(f"Entry for Week {week} updated successfully!")
+                
+                # Move Up button
+                if i > 0 and st.button(f"Move Up (Entry {i+1})", key=f"move_up_{week}_{i}"):
+                    swap_rows(content_worksheet, row_index, row_index - 1)
+                    st.success("Moved entry up successfully!")
+
+                # Move Down button
+                if i < len(week_data) - 1 and st.button(f"Move Down (Entry {i+1})", key=f"move_down_{week}_{i}"):
+                    swap_rows(content_worksheet, row_index, row_index + 1)
+                    st.success("Moved entry down successfully!")
+                
                 st.write("---")
 
             # Add new entry within this week
@@ -65,3 +76,12 @@ def show_create_dashboard():
             if st.button(f"Add New Entry to Week {week}", key=f"add_{week}"):
                 content_worksheet.append_row([week, new_type, new_title, new_content, new_link])
                 st.success(f"New entry added to Week {week} successfully!")
+
+def swap_rows(worksheet, row1, row2):
+    """Helper function to swap two rows in the Google Sheets worksheet."""
+    row1_data = worksheet.row_values(row1)
+    row2_data = worksheet.row_values(row2)
+    
+    # Swap the rows
+    worksheet.update(f"A{row1}:E{row1}", [row2_data])
+    worksheet.update(f"A{row2}:E{row2}", [row1_data])
