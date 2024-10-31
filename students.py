@@ -16,9 +16,9 @@ def show_student_dashboard():
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], scope)
     client = gspread.authorize(credentials)
 
-    # Load both Content and Class worksheets from Google Sheets
+    # Load both ContentID and Class worksheets from Google Sheets
     sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1IWn53fkhx_rznRJOGLqx-HlxOz7dffq6WiO_BRYe1aM/edit#gid=171068923")
-    content_worksheet = sheet.worksheet("Content")
+    content_worksheet = sheet.worksheet("ContentID")
     class_worksheet = sheet.worksheet("Class")
 
     # Fetch data
@@ -38,7 +38,7 @@ def show_student_dashboard():
         class_name = class_row['Class Name']
         
         with st.expander(f"{class_name}"):
-            # Loop through each week and display all types of content for that week
+            # Loop through each week and display content for that week
             for week in sorted(content_df['Week'].unique()):
                 st.subheader(f"Week {week}")
 
@@ -47,19 +47,17 @@ def show_student_dashboard():
                 
                 if not week_content.empty:
                     for _, row in week_content.iterrows():
-                        # Display type label for each content piece
+                        # Emoji based on content type
                         if row['Type'] == "Material":
-                            st.markdown("#### 📘 Material")
+                            emoji = "📘"
                         elif row['Type'] == "Assignment":
-                            st.markdown("#### 📝 Assignment")
+                            emoji = "📝"
                         elif row['Type'] == "Question":
-                            st.markdown("#### ❓ Question")
+                            emoji = "❓"
+                        else:
+                            emoji = ""
                         
-                        # Display content details
-                        st.write(f"**{row['Title']}**")
-                        st.write(row['Content'])
-                        if row['Link']:
-                            st.write(f"[View Resource]({row['Link']})")
-                        st.write("---")  # Separator between entries
+                        # Display only ID, emoji, and title for each content item
+                        st.write(f"{row['ID']}: {emoji} **{row['Title']}**")
                 else:
                     st.write("No content available for this week.")
