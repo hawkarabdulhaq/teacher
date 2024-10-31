@@ -49,7 +49,7 @@ def show_student_dashboard():
                 week_content = content_df[content_df['Week'] == week]
                 
                 if not week_content.empty:
-                    for _, row in week_content.iterrows():
+                    for idx, (_, row) in enumerate(week_content.iterrows(), start=1):  # Use idx as the automatic order
                         # Emoji based on content type
                         if row['Type'] == "Material":
                             emoji = "📘"
@@ -60,7 +60,7 @@ def show_student_dashboard():
                         else:
                             emoji = ""
                         
-                        # Display only ID, emoji, and title for each content item
-                        st.write(f"{row['ID']}: {emoji} **{row['Title']}**")
+                        # Display automatic order, emoji, and title for each content item
+                        st.write(f"{idx}: {emoji} **{row['Title']}**")
                 else:
                     st.write("No content available for this week.")
