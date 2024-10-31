@@ -25,6 +25,16 @@ def show_create_dashboard():
     data = content_worksheet.get_all_records()
     df = pd.DataFrame(data)
 
+    # Define custom button styles using HTML and CSS
+    button_styles = """
+    <style>
+        .save-button {background-color: #4CAF50; color: white; padding: 8px 16px; border: none; cursor: pointer; font-weight: bold;}
+        .move-up-button {background-color: #2196F3; color: white; padding: 8px 16px; border: none; cursor: pointer; font-weight: bold;}
+        .move-down-button {background-color: #FF9800; color: white; padding: 8px 16px; border: none; cursor: pointer; font-weight: bold;}
+    </style>
+    """
+    st.markdown(button_styles, unsafe_allow_html=True)
+
     # Group data by Week
     st.subheader("Modify Existing Content by Week")
     for week in sorted(df['Week'].unique()):
@@ -45,21 +55,23 @@ def show_create_dashboard():
                 row_index = df.index[df['Title'] == row['Title']].tolist()[0] + 2  # +2 to account for header and 0-based indexing
 
                 # Save button
-                if st.button(f"Save Changes (Week {week}, Entry {i+1})", key=f"save_{week}_{i}"):
-                    # Update the correct row in Google Sheets
+                if st.markdown(f"<button class='save-button' onclick='document.getElementById(\"save_{week}_{i}\").click()'>Save Changes</button>", unsafe_allow_html=True):
+                    st.button(f"Save Changes (Week {week}, Entry {i+1})", key=f"save_{week}_{i}")
                     content_worksheet.update_cell(row_index, 2, content_type)
                     content_worksheet.update_cell(row_index, 3, title)
                     content_worksheet.update_cell(row_index, 4, content)
                     content_worksheet.update_cell(row_index, 5, link)
                     st.success(f"Entry for Week {week} updated successfully!")
-                
+
                 # Move Up button
-                if i > 0 and st.button(f"Move Up (Entry {i+1})", key=f"move_up_{week}_{i}"):
+                if i > 0 and st.markdown(f"<button class='move-up-button' onclick='document.getElementById(\"move_up_{week}_{i}\").click()'>Move Up</button>", unsafe_allow_html=True):
+                    st.button(f"Move Up (Entry {i+1})", key=f"move_up_{week}_{i}")
                     swap_rows(content_worksheet, row_index, row_index - 1)
                     st.success("Moved entry up successfully!")
 
                 # Move Down button
-                if i < len(week_data) - 1 and st.button(f"Move Down (Entry {i+1})", key=f"move_down_{week}_{i}"):
+                if i < len(week_data) - 1 and st.markdown(f"<button class='move-down-button' onclick='document.getElementById(\"move_down_{week}_{i}\").click()'>Move Down</button>", unsafe_allow_html=True):
+                    st.button(f"Move Down (Entry {i+1})", key=f"move_down_{week}_{i}")
                     swap_rows(content_worksheet, row_index, row_index + 1)
                     st.success("Moved entry down successfully!")
                 
