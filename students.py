@@ -16,18 +16,32 @@ def show_student_dashboard():
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(st.secrets["gcp_service_account"], scope)
     client = gspread.authorize(credentials)
 
-    # Load both Content and Class worksheets from Google Sheets
+    # Load Content, Class, and Week worksheets from Google Sheets
     sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1IWn53fkhx_rznRJOGLqx-HlxOz7dffq6WiO_BRYe1aM/edit#gid=171068923")
     content_worksheet = sheet.worksheet("Content")
     class_worksheet = sheet.worksheet("Class")
+    week_worksheet = sheet.worksheet("Week")
 
-    # Fetch data
+    # Fetch data from sheets
     content_data = content_worksheet.get_all_records()
     class_data = class_worksheet.get_all_records()
+    week_data = week_worksheet.get_all_records()
 
     # Convert to DataFrames
     content_df = pd.DataFrame(content_data)
     class_df = pd.DataFrame(class_data)
+    week_df = pd.DataFrame(week_data)
+
+    # Map each class name to its weekly dates
+    week_dates_map = {}
+    for _, row in week_df.iterrows():
+        class_name = row['Class Name']
+        week_dates_map[class_name] = {
+            "Week 1": row['Week 1'],
+            "Week 2": row['Week 2'],
+            "Week 3": row['Week 3'],
+            "Week 4": row['Week 4']
+        }
 
     # Display total number of classes
     num_classes = class_df.shape[0]
@@ -41,6 +55,9 @@ def show_student_dashboard():
         class_title = f"**{class_name}**"
         
         with st.expander(label=class_title):
+            # Get weekly dates for the current class
+            weekly_dates = week_dates_map.get(class_name, {})
+
             # Loop through each week and display content for that week
             for week in sorted(content_df['Week'].unique()):
                 st.subheader(f"Week {week}")
@@ -60,7 +77,10 @@ def show_student_dashboard():
                         else:
                             emoji = ""
                         
-                        # Display automatic order, emoji, and title for each content item
-                        st.write(f"{idx}: {emoji} **{row['Title']}**")
+                        # Fetch the date for the current week for this class
+                        date_for_week = weekly_dates.get(f"Week {week}", "Date not set")
+                        
+                        # Display automatic order, date, emoji, and title for each content item
+                        st.write(f"{idx}: [{date_for_week}] {emoji} **{row['Title']}**")
                 else:
                     st.write("No content available for this week.")
