@@ -28,21 +28,6 @@ def show_create_dashboard():
     # Collect changes in a dictionary
     changes = []
 
-    # Button style with HTML and CSS
-    def styled_button(label, color="green"):
-        return st.markdown(f"""
-            <button style="
-                background-color: {color}; 
-                color: white; 
-                padding: 5px 15px; 
-                margin: 2px 0px; 
-                border: none; 
-                border-radius: 4px;
-                cursor: pointer;
-                font-weight: bold;
-            ">{label}</button>
-        """, unsafe_allow_html=True)
-
     # Group data by Week
     st.subheader("Modify Existing Content by Week")
     for week in sorted(df['Week'].unique()):
@@ -62,16 +47,14 @@ def show_create_dashboard():
                 # Calculate the correct row index in Google Sheets (adjusted for header row)
                 row_index = df.index[df['Title'] == row['Title']].tolist()[0] + 2  # +2 to account for header and 0-based indexing
 
-                # Save button (collect changes without submitting)
-                if st.button(f"Save Changes for Entry {i+1}", key=f"save_{week}_{i}"):
-                    changes.append({
-                        "row": row_index,
-                        "Type": content_type,
-                        "Title": title,
-                        "Content": content,
-                        "Link": link
-                    })
-                    st.success(f"Changes saved for Entry {i+1} in Week {week} (pending submission)")
+                # Store the changes
+                changes.append({
+                    "row": row_index,
+                    "Type": content_type,
+                    "Title": title,
+                    "Content": content,
+                    "Link": link
+                })
 
                 # Move Up button (swap rows and collect changes)
                 if i > 0 and st.button(f"Move Up (Entry {i+1})", key=f"move_up_{week}_{i}"):
