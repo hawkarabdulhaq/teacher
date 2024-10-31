@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from students import show_student_dashboard  # Import the student dashboard function
 
 # Google Sheets API setup using Streamlit secrets
 scope = ["https://spreadsheets.google.com/feeds", 
@@ -19,27 +20,35 @@ worksheet = sheet.worksheet("Content")
 data = worksheet.get_all_records()
 df = pd.DataFrame(data)
 
-# Streamlit app layout
-st.title("Teacher Dashboard: Course Content")
+# Sidebar for navigation
+st.sidebar.title("Navigation")
+view_choice = st.sidebar.radio("Go to", ["Content", "Students"])
 
-# Display each week’s content in a single collapsible section
-for week in sorted(df['Week'].unique()):
-    with st.expander(f"Week {week}"):
-        weekly_data = df[df['Week'] == week]
+# Show Content or Students view based on sidebar selection
+if view_choice == "Content":
+    # Display course content (from your original content code)
+    st.title("Teacher Dashboard: Course Content")
 
-        # Loop through each row within the selected week
-        for _, row in weekly_data.iterrows():
-            # Add type label as a badge or header to distinguish content
-            if row['Type'] == "Material":
-                st.markdown("#### 📘 Material")
-            elif row['Type'] == "Assignment":
-                st.markdown("#### 📝 Assignment")
-            elif row['Type'] == "Question":
-                st.markdown("#### ❓ Question")
-            
-            # Display title, content, and link
-            st.write(f"**{row['Title']}**")
-            st.write(row['Content'])
-            if row['Link']:
-                st.write(f"[View Resource]({row['Link']})")
-            st.write("---")  # Separator between entries
+    selected_week = st.sidebar.selectbox("Week", sorted(df['Week'].unique()))
+
+    for week in sorted(df['Week'].unique()):
+        with st.expander(f"Week {week}", expanded=(week == selected_week)):
+            weekly_data = df[df['Week'] == week]
+
+            for _, row in weekly_data.iterrows():
+                if row['Type'] == "Material":
+                    st.markdown("#### 📘 Material")
+                elif row['Type'] == "Assignment":
+                    st.markdown("#### 📝 Assignment")
+                elif row['Type'] == "Question":
+                    st.markdown("#### ❓ Question")
+                
+                st.write(f"**{row['Title']}**")
+                st.write(row['Content'])
+                if row['Link']:
+                    st.write(f"[View Resource]({row['Link']})")
+                st.write("---")
+
+elif view_choice == "Students":
+    # Call the student dashboard function
+    show_student_dashboard()
